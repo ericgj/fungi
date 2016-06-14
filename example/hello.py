@@ -4,10 +4,7 @@ log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
 
 from typing import Union, NamedTuple
-from f import always, identity, always
-from pymonad.Either import Left, Right
-from pymonad.Maybe import Just, Nothing
-from eitherutil import fold
+from f import identity, always
 from taskutil import resolve
 from unionutil import match
 
@@ -17,13 +14,11 @@ from reqparse import parse, one_of, all_of, s, format, method
 from wsgi import adapter
 
 HomeR = NamedTuple('HomeR',[])
-NullR = NamedTuple('NullR',[]) 
-Routes = Union[HomeR,NullR]    # Note Union types stupidly flatten unless >1 types
+Routes = Union[HomeR]    
 
 encode_path = (
   match(Routes, {
-    HomeR: always("/"),
-    type(None): (lambda : "")
+    HomeR: always("/")
   })
 )
 
@@ -39,8 +34,7 @@ route_parser = (
 def route(req):
   return (
     match(Routes, {
-      HomeR:      always(render_home(req)),
-      type(None): (lambda: resolve({}))
+      HomeR:      always(render_home(req))
     })
   )
 
