@@ -1,5 +1,7 @@
 
+from f import curry
 
+@curry
 def match(uniontype,cases,target):
   assert issubclass(target.__class__,uniontype), \
     "%s is not in union type" % target.__class__.__name__
