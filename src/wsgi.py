@@ -1,6 +1,6 @@
 import json
 from webob import Request, Response, exc
-from f import curry, merge, assoc
+from f import curry, merge, assoc, identity
 from taskmonad import Task
 import err
 
@@ -8,7 +8,7 @@ import err
 
 @curry
 def from_string(spec,s):
-  # (String, String) -> (String | (String,Cookies)) -> (Dict | (Dict,Cookies)) 
+  # (String, String) -> (String | (String,Session)) -> (Dict | (Dict,Session)) 
  
   ctype, charset = spec
   def _attrs(t):
@@ -29,7 +29,7 @@ from_text = from_string(('text/plain', 'utf8'))
 
 @curry
 def encode_json(encoder,data):
-  # JSONEncoder -> (Dict | (Dict,Cookie)) -> Task Exception (Dict | (Dict,Cookie))
+  # JSONEncoder -> (Dict | (Dict,Session)) -> Task Exception (Dict | (Dict,Session))
 
   from_json_s = from_string(('application/json','utf8'))
   return _if_tuple(
@@ -40,7 +40,7 @@ def encode_json(encoder,data):
 
 @curry
 def template(spec,tmpl,data):
-  # (String, String) -> {render: Dict -> String} -> (Dict | (Dict,Cookies)) -> Task Exception (Dict | (Dict,Cookies))
+  # (String, String) -> {render: Dict -> String} -> (Dict | (Dict,Session)) -> Task Exception (Dict | (Dict,Session))
   
   ctype, charset = spec
   from_s = from_string((ctype,charset))
@@ -55,7 +55,7 @@ template_text = template(('text/plain','utf-8'))
 
 @curry
 def add_headers(hdrlist,attrs):
-  # List (String, String) -> (Dict | (Dict,Cookies)) -> (Dict | (Dict,Cookies))
+  # List (String, String) -> (Dict | (Dict,Session)) -> (Dict | (Dict,Session))
 
   def _appendhdrs(a):
     assoc('headerlist', a, a.get('headerlist',[]) + hdrlist)
@@ -75,7 +75,7 @@ def redirect_to(url):
 
 @curry
 def adapter(log,func):
-  # Logger -> (Request -> Task Exception (Dict | (Dict,Cookies))) -> WSGIApp
+  # Logger -> (Request -> Task Exception Dict) -> WSGIApp
   
   def _adapter(environ, start_response):
     def _attach(resp):
@@ -95,6 +95,40 @@ def adapter(log,func):
   return _adapter
 
 @curry
+def adapter_with_session(log,writer,func):
+  # Logger 
+  # -> (Session -> Response -> Task Exception Response) 
+  # -> (Request -> Task Exception (Dict,Session)) 
+  # -> WSGIApp
+  
+  def _adapter(environ, start_response):
+    def _build_and_save_session((attrs,sess)):
+      resp = build_success_response(log,attrs)
+      if isinstance(resp, Response):                  # a kludge
+        return writer(sess, resp).fmap(always(resp))
+      else:
+        return resolve(resp)
+
+    def _attach(resp):
+      req.response = resp
+
+    req = Request(environ)
+    req.response = exc.HTTPNotImplemented()
+
+    task = (
+      ( func(req) >> _build_and_save_session ).bimap(
+          build_error_response(log),
+          identity
+        )
+    )
+    task.fork(_attach, _attach)
+
+    return req.response(environ, start_response)
+
+  return _adapter
+
+
+@curry
 def build_error_response(log,e):
   # Logger -> Exception -> HTTPError
 
@@ -103,23 +137,19 @@ def build_error_response(log,e):
     if isinstance(e,exc.HTTPError):
       return e
     else:
-      return exc.HTTPInternalServerError(comment=str(e))
+      return exc.HTTPInternalServerError(comment=str(e))   # Note: assumes ASCII repr
       
   except Exception as e_:
     return exc.HTTPInternalServerError(detail="Error in building error response", comment=str(e_))
 
 @curry
 def build_success_response(log,attrs):
-  # Logger -> (Dict | (Dict, Cookies)) -> WSGIApp
+  # Logger -> Dict -> WSGIApp
 
-  cookies = {}
-  if isinstance(attrs,tuple):
-    attrs, cookies = attrs
   try:
     attrs = merge({'status': 200}, attrs)
     log.debug('build_success_response', extra={'response': attrs})                 # TODO scrub
     resp = Response(**attrs)
-    # TODO cookies
     log.info('build_success_response',  extra={'status': attrs.get('status')})     # TODO a little more info
     return resp
 
@@ -128,7 +158,6 @@ def build_success_response(log,attrs):
     return build_error_response( log,
       exc.HTTPInternalServerError(detail="Error in building response", comment=str(e))
     )
-
 
 # --- utils
 
