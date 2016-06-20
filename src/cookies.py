@@ -3,7 +3,7 @@ from webob.cookies import SignedCookieProfile, CookieProfile
 
 Cookie = NamedTuple('Cookie', [('key', unicode), ('value', Any)])
 SignedProfile = NamedTuple('SignedProfile', [
-                  ('config', Dict), ('secret': unicode), ('salt': unicode)
+                  ('config', Dict), ('secret', unicode), ('salt', unicode)
                 ])
 UnsignedProfile = NamedTuple('UnsignedProfile', [('config', Dict)])
 Profile = Union[SignedProfile, UnsignedProfile]
@@ -34,6 +34,11 @@ def put(profile, (name, val), resp):
       rej(err.wrap(e))
 
   return Task(_put)
+
+def writer(profile):
+  # Profile -> (Cookie -> Response -> Task Exception Response)
+  # convenience function
+  return put(profile)
 
 
 def _adapter_for(name, profile):

@@ -8,7 +8,7 @@ import err
 
 @curry
 def from_string(spec,s):
-  # (String, String) -> (String | (String,Session)) -> (Dict | (Dict,Session)) 
+  # (String, String) -> (String | (String,Cookies)) -> (Dict | (Dict,Cookies)) 
  
   ctype, charset = spec
   def _attrs(t):
@@ -29,7 +29,7 @@ from_text = from_string(('text/plain', 'utf8'))
 
 @curry
 def encode_json(encoder,data):
-  # JSONEncoder -> (Dict | (Dict,Session)) -> Task Exception (Dict | (Dict,Session))
+  # JSONEncoder -> (Dict | (Dict,Cookies)) -> Task Exception (Dict | (Dict,Cookies))
 
   from_json_s = from_string(('application/json','utf8'))
   return _if_tuple(
@@ -40,7 +40,7 @@ def encode_json(encoder,data):
 
 @curry
 def template(spec,tmpl,data):
-  # (String, String) -> {render: Dict -> String} -> (Dict | (Dict,Session)) -> Task Exception (Dict | (Dict,Session))
+  # (String, String) -> {render: Dict -> String} -> (Dict | (Dict,Cookies)) -> Task Exception (Dict | (Dict,Cookies))
   
   ctype, charset = spec
   from_s = from_string((ctype,charset))
@@ -55,7 +55,7 @@ template_text = template(('text/plain','utf-8'))
 
 @curry
 def add_headers(hdrlist,attrs):
-  # List (String, String) -> (Dict | (Dict,Session)) -> (Dict | (Dict,Session))
+  # List (String, String) -> (Dict | (Dict,Cookies)) -> (Dict | (Dict,Cookies))
 
   def _appendhdrs(a):
     assoc('headerlist', a, a.get('headerlist',[]) + hdrlist)
@@ -95,17 +95,17 @@ def adapter(log,func):
   return _adapter
 
 @curry
-def adapter_with_session(log,writer,func):
+def adapter_with_cookies(log,writer,func):
   # Logger 
-  # -> (Session -> Response -> Task Exception Response) 
-  # -> (Request -> Task Exception (Dict,Session)) 
+  # -> (Cookies -> Response -> Task Exception Response) 
+  # -> (Request -> Task Exception (Dict,Cookies)) 
   # -> WSGIApp
   
   def _adapter(environ, start_response):
-    def _build_and_save_session((attrs,sess)):
+    def _build_and_save_cookies((attrs,cs)):
       resp = build_success_response(log,attrs)
       if isinstance(resp, Response):                  # a kludge
-        return writer(sess, resp).fmap(always(resp))
+        return writer(cs, resp).fmap(always(resp))
       else:
         return resolve(resp)
 
@@ -116,7 +116,7 @@ def adapter_with_session(log,writer,func):
     req.response = exc.HTTPNotImplemented()
 
     task = (
-      ( func(req) >> _build_and_save_session ).bimap(
+      ( func(req) >> _build_and_save_cookies ).bimap(
           build_error_response(log),
           identity
         )
