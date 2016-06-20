@@ -10,7 +10,7 @@ from pymonad_extra.util.task import resolve
 from fungi.util.union import match
 
 from fungi.core import dispatch
-from fungi.reqparse import parse, one_of, all_of, s, format, method, number
+from fungi.parse import parse, one_of, all_of, s, format, method, number
 
 from fungi.wsgi import adapter, encode_json, from_html
 
