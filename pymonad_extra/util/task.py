@@ -2,7 +2,7 @@ from f import curry
 import pymonad.Either
 import pymonad.Maybe
 
-from taskmonad import Task
+from pymonad_extra import Task
 
 def reject(val):
   return Task( lambda rej,_: rej(val) )

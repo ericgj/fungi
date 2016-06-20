@@ -1,7 +1,7 @@
 from google.appengine.api import users
 
-from fungi.taskmonad import Task
-import fungi.err as err
+from pymonad_extra import Task
+import fungi.util.err as err
 
 def current():
   def _current(rej,res):

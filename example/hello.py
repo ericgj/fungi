@@ -5,14 +5,14 @@ log.setLevel(logging.DEBUG)
 
 from json import JSONEncoder
 from typing import Union, NamedTuple
-from f import identity, always
-from taskutil import resolve
-from unionutil import match
+from fungi.util.f import identity, always
+from pymonad_extra.util.task import resolve
+from fungi.util.union import match
 
-from core import dispatch
-from reqparse import parse, one_of, all_of, s, format, method, number
+from fungi.core import dispatch
+from fungi.reqparse import parse, one_of, all_of, s, format, method, number
 
-from wsgi import adapter, encode_json, from_html
+from fungi.wsgi import adapter, encode_json, from_html
 
 HomeR = NamedTuple('HomeR',[])
 JsonR = NamedTuple('JsonR',[('id',int)])

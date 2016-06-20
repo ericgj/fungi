@@ -1,6 +1,8 @@
 """
-This is a direct translation of Elm's url-parser into Python:
+This is a adaptation of Elm's url-parser into Python:
   https://github.com/evancz/url-parser
+
+Where the Request object is availble to parsers as well as the URL.
 
 With much looser (and incomplete) type checking, as can be expected.
 
@@ -37,8 +39,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
 from pymonad.Either import Left, Right
-from eitherutil import fold
-from f import curry, fapply
+from pymonad_extra.util.either import fold
+from util.f import curry, fapply
 
 def parse(formatter, parser, req):
   """

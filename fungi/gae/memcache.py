@@ -1,11 +1,11 @@
 from google.appengine.api import memcache
 
-from fungi.f import curry, always
+from fungi.util.f import curry, always
 from pymonad.Maybe import Nothing, Just
-from fungi.maybeutil import with_default
-from fungi.taskmonad import Task
-from fungi.taskutil import resolve
-import fungi.err as err
+from pymonad_extra.util.maybe import with_default
+from pymonad_extra import Task
+from pymonad_extra.util.task import resolve
+import fungi.util.err as err
 
 def get(key):
   # String -> Task Exception (Maybe a)
