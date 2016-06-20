@@ -1,10 +1,11 @@
 from google.appengine.api import memcache
 
-from f import curry, always
+from fungi.f import curry, always
 from pymonad.Maybe import Nothing, Just
-from taskmonad import Task
-from taskutil import resolve
-import err
+from fungi.maybeutil import with_default
+from fungi.taskmonad import Task
+from fungi.taskutil import resolve
+import fungi.err as err
 
 def get(key):
   # String -> Task Exception (Maybe a)
@@ -29,6 +30,16 @@ def get_multi(prefix, keys):
   return Task(_get_multi)
 
 @curry
+def add(time, key, value):
+  def _add(rej,res):
+    try:
+      res( memcache.add(key,value,time=time) )
+    except Exception as e:
+      rej( err.wrap(e) )
+  return Task(_add)
+
+
+@curry
 def cache_get_with_time(time, key, task):
   # Int -> String -> Task a b -> Task a b
 
@@ -37,9 +48,11 @@ def cache_get_with_time(time, key, task):
 
   return (
     get(key) >> (
-      with_default(
-        task >> _and_add, 
-        resolve
+      lambda r: (
+        with_default(
+          task >> _and_add ,
+          r.fmap(resolve)
+        )
       )
     )
   )

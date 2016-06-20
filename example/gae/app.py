@@ -1,3 +1,7 @@
+"""
+An example GAE app making use of memcache for session data
+"""
+
 import os.path
 def local_file(fname):
   return os.path.join(os.path.dirname(__file__),fname)
@@ -50,10 +54,10 @@ def route(req):
 
 def render_home(req):
   def _get_nick(u):
-    return cache_get( "/".join(('session',u.id,'nick')), resolve(u.nickname()) )
+    return cache_get( "/".join(('session',u.email(),'nick')), resolve(u.nickname()) )
 
   def _render(nick):
-    return "<h1><a href=\"%s\">Hello, %s!</a></h1>" % ( encode_path(HomeR(), nick) )
+    return "<h1><a href=\"%s\">Hello, %s!</a></h1>" % ( encode_path(HomeR()), nick )
   
   return (
     (current_user() >> _get_nick).fmap(_render)
