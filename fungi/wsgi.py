@@ -1,7 +1,7 @@
 import json
 from webob import Request, Response, exc
 
-from pymonad_extra import Task
+from pymonad_extra.Task import Task
 from util.f import curry, merge, assoc, identity
 import util.err
 

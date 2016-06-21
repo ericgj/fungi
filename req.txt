@@ -1,3 +1,0 @@
-git+https://bitbucket.org/ericgj/pymonad.git
-typing>=3.5,<3.6
-webob>=1.6,<1.7

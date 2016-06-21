@@ -3,7 +3,7 @@ from google.appengine.api import memcache
 from fungi.util.f import curry, always
 from pymonad.Maybe import Nothing, Just
 from pymonad_extra.util.maybe import with_default
-from pymonad_extra import Task
+from pymonad_extra.Task import Task
 from pymonad_extra.util.task import resolve
 import fungi.util.err as err
 

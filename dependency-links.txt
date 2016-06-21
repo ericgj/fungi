@@ -1,0 +1,3 @@
+git+https://ericgj@bitbucket.org/ericgj/pymonad.git#egg=pymonad
+git+https://ericgj@bitbucket.org/ericgj/pymonad-extra.git#egg=pymonad_extra
+
