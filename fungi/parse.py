@@ -40,8 +40,9 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 from pymonad.Either import Left, Right
 from pymonad_extra.util.either import fold
-from util.f import curry, fapply
+from util.f import curry, fapply, identity
 
+@curry
 def parse(formatter, parser, req):
   """
   Note formatter is auto-curried, so you don't have to pass in a curried func.
@@ -57,6 +58,8 @@ def parse(formatter, parser, req):
     parsed
   )
 
+# for common case where parser captures the routes
+parse_route = parse(identity)
 
 def segment(text):
   # type: Parser

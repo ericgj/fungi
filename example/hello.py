@@ -10,7 +10,7 @@ from pymonad_extra.util.task import resolve
 from fungi.util.union import match
 
 from fungi.core import dispatch
-from fungi.parse import parse, one_of, all_of, s, format, method, number
+from fungi.parse import parse_route, one_of, all_of, s, format, method, number
 
 from fungi.wsgi import adapter, encode_json, from_html
 
@@ -24,9 +24,6 @@ encode_path = (
     JsonR: lambda id: "/item/%d" % id
   })
 )
-
-def parse_route(req):
-  return parse( identity, route_parser, req ) 
 
 route_parser = (
   one_of([
@@ -54,7 +51,7 @@ def render_item(id):
   return resolve({ "id": id }) >> encode_json(JSONEncoder)
 
 
-main = adapter(log, dispatch(parse_route, route))
+main = adapter(log, dispatch(parse_route(route_parser), route))
 
 if __name__ == '__main__':
   
