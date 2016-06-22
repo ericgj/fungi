@@ -3,7 +3,6 @@ logging.basicConfig()
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
 
-from json import JSONEncoder
 from typing import Union, NamedTuple
 from fungi.util.f import identity, always
 from pymonad_extra.util.task import resolve
@@ -48,7 +47,7 @@ def render_home(req):
   )
 
 def render_item(id):
-  return resolve({ "id": id }) >> encode_json(JSONEncoder)
+  return resolve({ "id": id }) >> encode_json
 
 
 main = adapter(log, dispatch(parse_route(route_parser), route))

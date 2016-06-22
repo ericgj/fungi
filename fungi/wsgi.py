@@ -1,8 +1,10 @@
-import json
+from json import JSONEncoder
 from webob import Request, Response, exc
 
 from pymonad_extra.Task import Task
+from pymonad_extra.util.either import to_task
 from util.f import curry, merge, assoc, identity
+from util.json_ import encode_with
 import util.err
 
 # --- Response helpers
@@ -29,15 +31,17 @@ from_html = from_string(('text/html','utf8'))
 from_text = from_string(('text/plain', 'utf8'))
 
 @curry
-def encode_json(encoder,data):
+def encode_json_with(encoder,data):
   # JSONEncoder -> (Dict | (Dict,Cookies)) -> Task Exception (Dict | (Dict,Cookies))
 
   from_json_s = from_string(('application/json','utf8'))
   return _if_tuple(
-    lambda d,c: json_encode(encoder,d).fmap(lambda s: (from_json_s(s),c)),
-    lambda d:   json_encode(encoder,d).fmap(from_json_s),
+    lambda d,c: to_task(encode_with(encoder,d)).fmap(lambda s: (from_json_s(s),c)),
+    lambda d:   to_task(encode_with(encoder,d)).fmap(from_json_s),
     data
   )
+
+encode_json = encode_json_with(JSONEncoder)
 
 @curry
 def template(spec,tmpl,data):
@@ -175,16 +179,6 @@ def render(tmpl,data):
 
   return Task(_render)
 
-
-def json_encode(encoder,data):
-  def _encode(rej,res):
-    try:
-      res( json.dumps(data, cls=encoder, separators=(',',':')) )
-
-    except Exception as e:
-      rej(err.wrap(e))
-  
-  return Task(_encode)
 
 
 def _if_tuple(iftrue,iffalse,x):
