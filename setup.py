@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
   name='fungi',
-  version='0.2',
+  version='0.3',
   description='Functional Gateway Interface Drug',
   url='https://github.com/ericgj/fungi',
   author='Eric Gjertsen',
@@ -15,9 +15,7 @@ setup(
   ],
   install_requires=[
     'typing >=3.5, <3.6',
-    'webob >=1.6, <1.7',
-    'pymonad >=1.3, <2.0',
-    'pymonad-extra'
+    'webob >=1.6, <1.7'
   ]
 )
 
