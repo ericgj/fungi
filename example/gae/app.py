@@ -17,14 +17,16 @@ log.setLevel(logging.DEBUG)
 from typing import Union, NamedTuple
 from util.f import identity, always
 from pymonad_extra.util.task import resolve
+from pymonad_extra.util.maybe import with_default
 from util.union import match
 
 from fungi.core import dispatch
 from fungi.parse import parse_route, one_of, all_of, s, format, method, number
 from fungi.gae.memcache import cache_get
-from fungi.gae.user import current as current_user
-from fungi.wsgi import adapter, from_html
+from fungi.gae.user import current as current_user, login_url
+from fungi.wsgi import adapter, from_html, redirect_to
 
+redirect_to_login = lambda url: login_url(url).fmap( redirect_to ) 
 
 HomeR = NamedTuple('HomeR',[])
 Routes = Union[HomeR]    
@@ -44,7 +46,7 @@ route_parser = (
 def route(req):
   return (
     match(Routes, {
-      HomeR: always(render_home(req).fmap(from_html))
+      HomeR: always(render_home(req))
     })
   )
 
@@ -56,7 +58,12 @@ def render_home(req):
     return "<h1><a href=\"%s\">Hello, %s!</a></h1>" % ( encode_path(HomeR()), nick )
   
   return (
-    (current_user() >> _get_nick).fmap(_render)
+    with_default(
+      redirect_to_login(req.url), 
+      current_user().fmap( 
+        lambda u: _get_nick(u).fmap(_render).fmap(from_html) 
+      )
+    )
   )
 
 main = adapter(log, dispatch(parse_route(route_parser), route))
