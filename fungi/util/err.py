@@ -6,23 +6,22 @@ Use within exception-handlers of Task functions like this:
       rej(err.wrap(e))
 
 """
-
 import sys
 import traceback
 
 def wrap(e):
-  return Err(e,sys.exc_info()[2])
+  return Err(e,sys.exc_info())
 
 class Err(object):
-  def __init__(self,e,tb):
+  def __init__(self,e,exc):
     self.error = e
-    self.traceback = tb
+    self.exc = exc
 
   def __str__(self):
-    if len(traceback.extract_tb(self.traceback)) <= 1:
+    trace = traceback.format_exception(*self.exc)
+    if len(trace) <= 1:
       return unicode(self.error)
     else:
-      dump = traceback.format_exc(self.traceback)
+      dump = u"".join(trace)
       return u"%s\n%s" % (unicode(self.error),dump)
-
 

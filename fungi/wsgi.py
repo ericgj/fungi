@@ -145,7 +145,8 @@ def build_error_response(log,e):
     if isinstance(e,exc.HTTPError) or isinstance(e,exc.HTTPRedirection):
       return e
     else:
-      return exc.HTTPInternalServerError(comment=str(e))   # Note: assumes ASCII repr
+      tmpl = '${explanation}<br/><br/><pre>${detail}</pre>${html_comment}'
+      return exc.HTTPInternalServerError(detail=str(e), body_template=tmpl)   # Note: assumes ASCII repr
       
   except Exception as e_:
     return exc.HTTPInternalServerError(detail="Error in building error response", comment=str(e_))
