@@ -28,7 +28,7 @@ OAuthParams = NamedTuple('OAuthParams', [
   ('token_uri', unicode),
   ('revoke_uri', unicode),
   ('callback_path', unicode),
-  ('token_response_param', Maybe),  # Maybe[unicode]
+  ('token_response_param', unicode),  # or None
   ('flow_params', Dict)
 ])
 
@@ -151,10 +151,10 @@ def callback(params,cache,secret,req,uid):
       tok = either.with_default( '{}', json_.encode(data) )
       return add_query_param(uri, key, tok)
     
-    return maybe.with_default(
-      uri,
-      params.token_response_param.fmap( _add )
-    )
+    if params.token_response_param is None:
+      return uri
+    else:
+      return _add(params.token_response_param)
 
   return (
     (( Task(_exchange) 

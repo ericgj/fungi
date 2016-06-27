@@ -123,8 +123,20 @@ class TestAppEngineOAuth(unittest.TestCase):
       act = next( v for (k,v) in hdrs if k == 'Location' )
     except StopIteration:
       raise AssertionError, "No Location header in response"
+    act = act.split('?',1)[0]
     self.assertEqual(act, exp, "Expected Location to be '%s', was '%s'" % (exp,act) )
 
+  def assertResponseLocationParam(self,key,exp,data):
+    hdrs = data.get('headerlist',[])
+    try:
+      loc = next( v for (k,v) in hdrs if k == 'Location')
+    except StopIteration:
+      raise AssertionError, "No Location header in response"
+    q = parse_qs(loc.split('?',1)[1])
+    act = q.get(key)[0]
+    self.assertEqual(act, exp, 
+      "Expected Location query param '%s' to be '%s', was '%s'" % (key,exp,act)
+    )
 
   def clear_cache(self):
     def _raise(e):
@@ -185,7 +197,11 @@ class TestAppEngineOAuth(unittest.TestCase):
       def _spy(respdata):
         testcase.assertResponseRedirect(respdata)
         testcase.assertResponseLocation(encode_url(Required(),req), respdata)
-        # TODO test location query params if oauth_param.token_response_param
+        key = oauth_params.token_response_param
+        if key:
+          testcase.assertResponseLocationParam(
+            key, json.dumps(Http2Fake.content, separators=(',',':')), respdata
+          )
         testcase.called_callback = True
         return respdata
       return _oauth_callback(req) >> _spy
@@ -223,7 +239,7 @@ class TestAppEngineOAuth(unittest.TestCase):
       token_uri='https://fake.com/oauth/token',
       revoke_uri='https://fake.com/oauth/revoke',
       callback_path='/oauth2callback',
-      token_response_param=Nothing,
+      token_response_param='token_response',
       flow_params={}
     )
   
