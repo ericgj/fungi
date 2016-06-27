@@ -62,8 +62,8 @@ template_text = template(('text/plain','utf-8'))
 def add_headers(hdrlist,attrs):
   # List (String, String) -> (Dict | (Dict,Cookies)) -> (Dict | (Dict,Cookies))
 
-  def _appendhdrs(a):
-    assoc('headerlist', a, a.get('headerlist',[]) + hdrlist)
+  def _appendhdrs(at):
+    return assoc('headerlist', at.get('headerlist',[]) + hdrlist, at)
 
   return _if_tuple(
     lambda at,c: (_appendhdrs(at), c),
@@ -75,6 +75,9 @@ def redirect_to(url):
   # String -> (Dict | (Dict,Cookies))
   return add_headers([('Location',url)], {'status': 303}) 
 
+
+def redirect_response(url):
+  return exc.HTTPSeeOther(location=url)
 
 # --- WSGI app adapter
 
@@ -139,7 +142,7 @@ def build_error_response(log,e):
 
   try:
     log.error('build_error_response: %s', unicode(e), extra={'error': e} )
-    if isinstance(e,exc.HTTPError):
+    if isinstance(e,exc.HTTPError) or isinstance(e,exc.HTTPRedirection):
       return e
     else:
       return exc.HTTPInternalServerError(comment=str(e))   # Note: assumes ASCII repr

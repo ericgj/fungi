@@ -19,6 +19,10 @@ class Err(object):
     self.traceback = tb
 
   def __str__(self):
-    return "%s\n%s" % (str(self.error), traceback.format_exc(self.traceback))
+    if len(traceback.extract_tb(self.traceback)) <= 1:
+      return unicode(self.error)
+    else:
+      dump = traceback.format_exc(self.traceback)
+      return u"%s\n%s" % (unicode(self.error),dump)
 
 

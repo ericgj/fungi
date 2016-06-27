@@ -15,7 +15,12 @@ setup(
   ],
   install_requires=[
     'typing >=3.5, <3.6',
-    'webob >=1.6, <1.7'
+    'webob >=1.6, <1.7',
+    'oauth2client >=2.2, <2.3'
+  ],
+  tests_require=[
+    'httplib2 >=0.9, <0.10',
+    'webtest >=2.0, <2.1'
   ]
 )
 
