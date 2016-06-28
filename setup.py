@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
   name='fungi',
-  version='0.4',
+  version='0.5',
   description='Functional Gateway Interface Drug',
   url='https://github.com/ericgj/fungi',
   author='Eric Gjertsen',
