@@ -25,3 +25,4 @@ class Err(object):
       dump = u"".join(trace)
       return u"%s\n%s" % (unicode(self.error),dump)
 
+      

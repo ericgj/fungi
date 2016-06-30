@@ -20,8 +20,8 @@ from pymonad_extra.util.task import resolve
 from pymonad_extra.util.maybe import with_default
 from util.union import match
 
-from fungi.core import dispatch
-from fungi.parse import parse_route, one_of, all_of, s, format, method, number
+from fungi import mount
+from fungi.parse import one_of, all_of, s, format, method, number
 from fungi.gae.memcache import cache_get
 from fungi.gae.user import current as current_user, login_url
 from fungi.wsgi import adapter, from_html, redirect_to
@@ -43,7 +43,7 @@ route_parser = (
   ])
 )
 
-def route(req):
+def route(req,_):
   return (
     match(Routes, {
       HomeR: always(render_home(req))
@@ -66,6 +66,6 @@ def render_home(req):
     )
   )
 
-main = adapter(log, dispatch(parse_route(route_parser), route))
+main = mount(log, route_parser, route)
 
 

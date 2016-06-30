@@ -30,7 +30,7 @@ route_parser = (
   ])
 )
 
-def route(req):
+def route(req,_):
   return (
     match(Routes, {
       HomeR: always(render_home(req)),
