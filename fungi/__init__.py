@@ -5,7 +5,7 @@ from parse import parse_route
 class InitError(Exception):
   pass
 
-def mount(log, parser, router, config=(), init=None):
+def mount(parser, router, config=(), init=None):
   def _raise(e):
     raise InitError(unicode(e))
 
@@ -13,9 +13,9 @@ def mount(log, parser, router, config=(), init=None):
     hook['config'] = c
 
   if init is None:
-    return adapter(log, dispatch(parse_route(parser), router, config))
+    return adapter(dispatch(parse_route(parser), router, config))
   else:
     hook = { 'config': () }
     init.fork(_raise, _set_config)
-    return mount(log, parser, router, config=hook['config'])
+    return mount(parser, router, config=hook['config'])
 

@@ -1,7 +1,6 @@
 import logging
-logging.basicConfig()
+logging.basicConfig(level=logging.DEBUG)
 log = logging.getLogger(__name__)
-log.setLevel(logging.DEBUG)
 
 from typing import Union, NamedTuple
 from fungi.util.f import identity, always
@@ -49,7 +48,7 @@ def render_item(id):
   return resolve({ "id": id }) >> encode_json
 
 
-main = mount(log, route_parser, route)
+main = mount(route_parser, route)
 
 if __name__ == '__main__':
   

@@ -1,8 +1,7 @@
 import os.path
 import logging
-logging.basicConfig()
+logging.basicConfig(level=logging.DEBUG)
 log = logging.getLogger(__name__)
-log.setLevel(logging.DEBUG)
 
 from typing import Union, NamedTuple
 from fungi.util.f import identity, always
@@ -71,7 +70,7 @@ def load_secret(rej,res):
   except Exception as e:
     rej( err.wrap(e) )
 
-main = mount(log, route_parser, route, init=Task(load_secret))
+main = mount(route_parser, route, init=Task(load_secret))
 
 if __name__ == '__main__':
   

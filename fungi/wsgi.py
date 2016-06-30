@@ -1,11 +1,14 @@
+import logging
 from json import JSONEncoder
 from webob import Request, Response, exc
 
 from pymonad_extra.Task import Task
-from pymonad_extra.util.either import to_task
+from pymonad_extra.util.either import to_task, with_default
 from util.f import curry, merge, assoc, identity
-from util.json_ import encode_with
+from util.json_ import pretty_encode, encode_with
 import util.err
+
+log = logging.getLogger(__name__)
 
 # --- Response helpers
 
@@ -81,9 +84,8 @@ def redirect_response(url):
 
 # --- WSGI app adapter
 
-@curry
-def adapter(log,func):
-  # Logger -> (Request -> Task Exception Dict) -> WSGIApp
+def adapter(func):
+  # (Request -> Task Exception Dict) -> WSGIApp
   
   def _adapter(environ, start_response):
     def _attach(resp):
@@ -93,8 +95,8 @@ def adapter(log,func):
     req.response = exc.HTTPNotImplemented()
 
     task = func(req).bimap(
-      build_error_response(log),
-      build_success_response(log)
+      build_error_response,
+      build_success_response
     )
     task.fork(_attach, _attach)
 
@@ -103,15 +105,14 @@ def adapter(log,func):
   return _adapter
 
 @curry
-def adapter_with_cookies(log,writer,func):
-  # Logger 
-  # -> (Cookies -> Response -> Task Exception Response) 
+def adapter_with_cookies(writer,func):
+  # (Cookies -> Response -> Task Exception Response) 
   # -> (Request -> Task Exception (Dict,Cookies)) 
   # -> WSGIApp
   
   def _adapter(environ, start_response):
     def _build_and_save_cookies((attrs,cs)):
-      resp = build_success_response(log,attrs)
+      resp = build_success_response(attrs)
       if isinstance(resp, Response):                  # a kludge
         return writer(cs, resp).fmap(always(resp))
       else:
@@ -125,7 +126,7 @@ def adapter_with_cookies(log,writer,func):
 
     task = (
       ( func(req) >> _build_and_save_cookies ).bimap(
-          build_error_response(log),
+          build_error_response,
           identity
         )
     )
@@ -136,9 +137,8 @@ def adapter_with_cookies(log,writer,func):
   return _adapter
 
 
-@curry
-def build_error_response(log,e):
-  # Logger -> Exception -> HTTPError
+def build_error_response(e):
+  # Exception -> HTTPError
 
   try:
     log.error('build_error_response: %s', unicode(e), extra={'error': e} )
@@ -151,20 +151,21 @@ def build_error_response(log,e):
   except Exception as e_:
     return exc.HTTPInternalServerError(detail="Error in building error response", comment=str(e_))
 
-@curry
-def build_success_response(log,attrs):
-  # Logger -> Dict -> WSGIApp
+def build_success_response(attrs):
+  # Dict -> WSGIApp
 
   try:
     attrs = merge({'status': 200}, attrs)
-    log.debug('build_success_response', extra={'response': attrs})                 # TODO scrub
+    log.debug('build_success_response\n%s' % with_default({}, pretty_encode(attrs)), 
+              extra={'response': attrs})                 # TODO scrub
     resp = Response(**attrs)
-    log.info('build_success_response',  extra={'status': attrs.get('status')})     # TODO a little more info
+    log.info('build_success_response: %s' % attrs.get('status'),  
+             extra={'status': attrs.get('status')})     # TODO a little more info
     return resp
 
   # TODO: include backtrace
   except Exception as e:
-    return build_error_response( log,
+    return build_error_response( 
       exc.HTTPInternalServerError(detail="Error in building response", comment=str(e))
     )
 

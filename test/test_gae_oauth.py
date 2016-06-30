@@ -174,7 +174,7 @@ class TestAppEngineOAuth(unittest.TestCase):
       ])
     )
 
-    def route(req):
+    def route(req,_):
       return (
         match(Routes, {
           Required: always(required_handler(req)),
@@ -222,8 +222,7 @@ class TestAppEngineOAuth(unittest.TestCase):
     testcase.was_authorized = False
     testcase.called_callback = False
  
-    log = logging.getLogger(self.__class__.__name__ + '.app')
-    return mount( log, route_parser, route )
+    return mount( route_parser, route )
 
 
   #------- Tests

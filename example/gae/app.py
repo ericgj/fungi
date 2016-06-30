@@ -10,9 +10,8 @@ from google.appengine.ext import vendor
 vendor.add(local_file('lib'))
 
 import logging
-logging.basicConfig()
+logging.basicConfig(level=logging.DEBUG)
 log = logging.getLogger(__name__)
-log.setLevel(logging.DEBUG)
 
 from typing import Union, NamedTuple
 from util.f import identity, always
@@ -66,6 +65,6 @@ def render_home(req):
     )
   )
 
-main = mount(log, route_parser, route)
+main = mount(route_parser, route)
 
 
