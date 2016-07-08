@@ -62,7 +62,7 @@ class Store(object):
           rej(err.wrap(e))
       return Task(_delete_task)
 
-    return task.all([
+    return task.sequence([
       _delete(key) for key in self._model.query().iter(keys_only=True)
     ])
   
