@@ -1,16 +1,14 @@
-from typing import NamedTuple, Union, Any, Dict
 from webob.cookies import SignedCookieProfile, CookieProfile
 
-from util.f import curry
-from util.union import match
+from util.f import curry, always
 import util.err as err
+from util.adt import Type, match
 
-Cookie = NamedTuple('Cookie', [('key', unicode), ('value', Any)])
-SignedProfile = NamedTuple('SignedProfile', [
-                  ('config', Dict), ('secret', unicode), ('salt', unicode)
-                ])
-UnsignedProfile = NamedTuple('UnsignedProfile', [('config', Dict)])
-Profile = Union[SignedProfile, UnsignedProfile]
+Cookie = Type('Cookie', [ unicode, always(True) ])  # key, value
+SignedProfile = Type('SignedProfile', [dict, unicode, unicode])  # config, secret, salt
+UnsignedProfile = Type('UnsignedProfile', [dict])  # config
+
+Profile = [SignedProfile, UnsignedProfile]
 
 @curry
 def get(profile, name, req):

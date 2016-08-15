@@ -63,6 +63,30 @@ def curry(func):
       return curry(para_func)
       
   return _curry
+
+
+def curry_n(n):
+  def _curry_n(func):
+    @wraps(func)
+    def _curry(*args, **kwargs):
+      f = func
+      
+      count = 0
+      while isinstance(f, partial) and count < n:
+        if f.args:
+          count += len(f.args)
+        f = f.func
+
+      if count >= n - len(args):
+        return func(*args, **kwargs)
+          
+      para_func = partial(func, *args, **kwargs)
+      update_wrapper(para_func, f)
+      return _curry_n(para_func)
+        
+    return _curry
+  
+  return _curry_n
     
 @curry
 def applyf(args,fn):

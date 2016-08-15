@@ -1,7 +1,7 @@
+from collections import namedtuple
 from urlparse import urlparse, parse_qsl, urlunparse
 from urllib import urlencode
 
-from typing import NamedTuple, List, Dict
 from webob import exc
 from httplib2 import Http
 from oauth2client import GOOGLE_AUTH_URI, GOOGLE_REVOKE_URI, GOOGLE_TOKEN_URI
@@ -19,17 +19,17 @@ from wsgi import redirect_to
 import util.err as err
 import util.json_ as json_
 
-OAuthParams = NamedTuple('OAuthParams', [
-  ('client_id', unicode),
-  ('client_secret', unicode),
-  ('scopes', List[unicode]),
-  ('user_agent', unicode),
-  ('auth_uri', unicode),
-  ('token_uri', unicode),
-  ('revoke_uri', unicode),
-  ('callback_path', unicode),
-  ('token_response_param', unicode),  # or None
-  ('flow_params', Dict)
+OAuthParams = namedtuple('OAuthParams', [
+  'client_id',
+  'client_secret',
+  'scopes',
+  'user_agent',
+  'auth_uri',
+  'token_uri',
+  'revoke_uri',
+  'callback_path',
+  'token_response_param',  # or None
+  'flow_params'
 ])
 
 def GoogleOAuthParams(client_id,client_secret,scopes,user_agent,callback_path,token_response_param,flow_params):

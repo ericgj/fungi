@@ -21,7 +21,7 @@ from fungi import mount
 from fungi.wsgi import encode_json
 import fungi.oauth as oauth
 from fungi.util.f import always, fapply
-from fungi.util.union import match
+from fungi.util.adt import Type, match
 from fungi.parse import one_of, s, format, method
 from fungi.gae.oauth import CredentialsStore
 from fungi.gae.user import current_or_redirect_to_login
@@ -153,9 +153,9 @@ class TestAppEngineOAuth(unittest.TestCase):
 
   def app(self, oauth_params):
     
-    Required = NamedTuple('Required',[])
-    Callback = NamedTuple('Callback',[])
-    Routes = Union[Required,Callback]
+    Required = Type('Required',[])
+    Callback = Type('Callback',[])
+    Routes = ( Required, Callback )
     
     encode_path = (
       match(Routes, {

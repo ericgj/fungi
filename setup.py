@@ -14,7 +14,6 @@ setup(
     'https://bitbucket.org/ericgj/pymonad-extra/get/master.zip#egg=pymonad_extra'
   ],
   install_requires=[
-    'typing >=3.5, <3.6',
     'webob >=1.6, <1.7',
     'oauth2client >=2.2, <2.3',
     'httplib2 >=0.9, <0.10'
