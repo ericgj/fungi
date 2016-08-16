@@ -8,6 +8,8 @@ import pymonad_extra.util.task as task
 
 import fungi.util.err as err
 
+log = logging.getLogger(__name__)
+
 def CredentialsStore():
   return Store(CredentialsNDBModel, 'credentials')
 
@@ -99,8 +101,6 @@ NDB_KEY = ndb.Key
 NDB_MODEL = ndb.Model
 """Model constant used by :mod:`oauth2client.contrib.appengine`."""
 
-_LOGGER = logging.getLogger(__name__)
-
 
 class CredentialsNDBProperty(ndb.BlobProperty):
     """App Engine NDB datastore Property for Credentials.
@@ -123,7 +123,7 @@ class CredentialsNDBProperty(ndb.BlobProperty):
         Raises:
             TypeError if the value is not an instance of Credentials.
         """
-        _LOGGER.info('validate: Got type %s', type(value))
+        log.debug('validate: Got type %s', type(value))
         if value is not None and not isinstance(value, Credentials):
             raise TypeError('Property %s must be convertible to a '
                             'credentials instance; received: %s.' %

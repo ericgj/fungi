@@ -40,7 +40,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 import logging
 from pymonad.Either import Left, Right
 from pymonad_extra.util.either import fold
-from util.f import curry, fapply, identity
+from util.f import curry, fapply, identity, always
 
 log = logging.getLogger(__name__)
 def debug_log(msg, x):
@@ -119,6 +119,33 @@ def to_int(x):
 number = custom("NUMBER", to_int)
 
 
+def like_path(tmpl):
+  def _compile(part):
+    if part.startswith("%"):
+      return {
+        'd': number,
+        's': string
+      }[part[1:]]
+    else:
+      return s(part)
+
+  try:
+    path = tmpl[1:] if tmpl.startswith("/") else tmpl
+    parts = path.split("/")
+    parsers = [
+      _compile(part) for part in parts
+    ]
+
+  # ok, this is lazy but good enough for now
+  except Exception as e:
+    return always( 
+      Left("Unable to parse template: %s" % str(e))
+    )
+
+  return all_of(parsers)
+
+
+
 # Non-URL based parsing
 
 def custom_req(label,fn):
@@ -138,6 +165,17 @@ def methods(meths):
   return custom_req("METHOD", lambda req: req.method in meths)  
 
 
+def like(tmpl):
+  try:
+    meth, path = tmpl.split(" ")
+  except Exception as e:
+    return always( 
+      Left("Unable to parse template: %s" % str(e))
+    )
+
+  return all_of( [ method(meth), like_path(path) ] )
+
+  
 # Combinators
 
 def combine(pfirst,prest):

@@ -22,7 +22,7 @@ class TestParse(unittest.TestCase):
   def assert_success(self, exp, parser, req):
     def _fail(msg):
       self.assertTrue( 
-        False, "Expected success, was failure (message = %s)" % act.value() )
+        False, "Expected success, was failure (message = %s)" % act.value )
 
     def _success(a):
       self.assertEqual(a,exp, 
@@ -218,6 +218,21 @@ class TestParse(unittest.TestCase):
     
     print "Note: %d permutations tested" % n
 
+
+  def test_like(self):
+    PutSubThing = Type("PutSubThing", [int,str])
+    parser = p.like("PUT /thing/%d/sub/%s")
+      
+    tester = p.parse(PutSubThing, parser)
+
+    self.assert_success(
+      PutSubThing(123,'baz'), tester, DummyRequest("PUT", "/thing/123/sub/baz") )
+
+    self.assert_fail(
+      tester, DummyRequest("GET", "/thing/123/sub/baz") )
+
+    self.assert_fail(
+      tester, DummyRequest("PUT", "/thing/baz/sub/123") )
 
 
 if __name__ == '__main__':

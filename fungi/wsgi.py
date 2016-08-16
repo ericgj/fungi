@@ -4,11 +4,14 @@ from webob import Request, Response, exc
 
 from pymonad_extra.Task import Task
 from pymonad_extra.util.either import to_task, with_default
-from util.f import curry, merge, assoc, identity
+from util.f import curry, merge, assoc, dissoc, identity
 from util.json_ import pretty_encode, encode_with
 import util.err
 
 log = logging.getLogger(__name__)
+def debug_log(msg,x):
+  log.debug("%s : %s" % (msg,x))
+  return x
 
 # --- Response helpers
 
@@ -39,8 +42,14 @@ def encode_json_with(encoder,data):
 
   from_json_s = from_string(('application/json','utf8'))
   return _if_tuple(
-    lambda d,c: to_task(encode_with(encoder,d)).fmap(lambda s: (from_json_s(s),c)),
-    lambda d:   to_task(encode_with(encoder,d)).fmap(from_json_s),
+    lambda d,c: (
+      to_task(encode_with(encoder,d))
+        .fmap(lambda s: (from_json_s( debug_log("encode_json_with",s) ),c))
+    ),
+    lambda d:   (
+      to_task(encode_with(encoder,d))
+        .fmap(lambda s: from_json_s( debug_log("encode_json_with",s) ))
+    ),
     data
   )
 
@@ -156,8 +165,9 @@ def build_success_response(attrs):
 
   try:
     attrs = merge({'status': 200}, attrs)
-    log.debug('build_success_response\n%s' % with_default({}, pretty_encode(attrs)), 
-              extra={'response': attrs})                 # TODO scrub
+    attrs_ = dissoc('body',attrs)
+    log.debug('build_success_response: (body omitted)\n%s' % with_default({}, pretty_encode(attrs_)), 
+              extra={'response': attrs_}) 
     resp = Response(**attrs)
     log.info('build_success_response: %s' % attrs.get('status'),  
              extra={'status': attrs.get('status')})     # TODO a little more info
