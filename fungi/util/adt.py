@@ -36,14 +36,14 @@ def Type(tag, specs):
     def __eq__(self,other):
       return (
         self.__class__ == other.__class__ and 
-        super(tuple,self).__eq__(other)
+        super(_tagged_tuple,self).__eq__(other)
       )
      
     # Note: only eval()-able if constructors are in scope with same name as tags     
     def __repr__(self):
       return (
         self.__class__.__name__ + 
-        "( " + ", ".join(str(p) for p in self) + " )"
+        "( " + ", ".join(repr(p) for p in self) + " )"
       )
 
   _tagged_tuple.__name__ = tag

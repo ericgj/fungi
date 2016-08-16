@@ -37,23 +37,34 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 """
 
-
+import logging
 from pymonad.Either import Left, Right
 from pymonad_extra.util.either import fold
 from util.f import curry, fapply, identity
 
+log = logging.getLogger(__name__)
+def debug_log(msg, x):
+  log.debug("%s : %s" % (msg, x))
+  return x
+
 @curry
 def parse(formatter, parser, req):
+  # (a -> b) -> Parser -> Request -> Either String b
+
   """
-  Note formatter is auto-curried, so you don't have to pass in a curried func.
+  Note: formatter MUST be curried if > 1 argument.
   """
   url = req.path[1:]
-  parsed = parser( ([], url.split('/')), req, curry(formatter) )
+  parsed = parser( ([], url.split('/')), req, formatter )
   return fold(
-    lambda msg: Left(msg),
+    lambda msg: debug_log("fail", Left(msg)),
     lambda ((_,rest),req,result): (
-      Right(result() if callable(result) else result) if len(rest) == 0 or rest == [""] else \
-      Left("Parsed URL, but '%s' was left over" % "/".join(rest))
+      debug_log("success", 
+        Right(result() if callable(result) else result)
+      ) if len(rest) == 0 or rest == [""] else \
+      debug_log("fail", 
+        Left("Parsed URL, but '%s' was left over" % "/".join(rest))
+      )
     ),
     parsed
   )
@@ -62,7 +73,7 @@ def parse(formatter, parser, req):
 parse_route = parse(identity)
 
 def segment(text):
-  # type: Parser
+  # String -> ParseState -> Either String ParseState
 
   def _segment((seen,rest),req,result):
 
@@ -80,10 +91,11 @@ def segment(text):
 s = segment
 
 def custom(label,fn):
+  # String -> (String -> Either String a) -> ParseState -> Either String ParseState
 
   def _custom((seen,rest), req, result):
     if len(rest) == 0:
-      return Left("Got to the end of the URL but wanted '%s'" % label)
+      return Left("Got to the end of the URL but wanted %s" % label)
     else:
       chunk = rest[0]
       return fold(
@@ -94,6 +106,7 @@ def custom(label,fn):
 
   return _custom
 
+# ParseState -> Either String ParseState
 string = custom("STRING", Right)
 
 def to_int(x):
@@ -102,12 +115,14 @@ def to_int(x):
   except ValueError as e: 
     return Left(unicode(e))
 
+# ParseState -> Either String ParseState
 number = custom("NUMBER", to_int)
 
 
 # Non-URL based parsing
 
 def custom_req(label,fn):
+  # String -> (Request -> Boolean) -> Either String ParseState
 
   def _custom_req((seen,rest), req, result):
     if fn(req):
@@ -123,10 +138,10 @@ def methods(meths):
   return custom_req("METHOD", lambda req: req.method in meths)  
 
 
-
+# Combinators
 
 def combine(pfirst,prest):
-  # type: Parser -> Parser -> Parser
+  # Parser -> Parser -> Parser
 
   @curry
   def _combine(chunks, req, ffirst):
@@ -137,7 +152,7 @@ def combine(pfirst,prest):
 
 
 def all_of(parsers):
-  # type: List[Parser] -> Parser
+  # List Parser -> Parser
 
   """
   Note: added this for ease of use in Python, which doesn't have generic infix
@@ -147,7 +162,7 @@ def all_of(parsers):
 
 
 def one_of(parsers):  
-  # type: List[Parser] -> Parser
+  # List Parser -> Parser
 
   @curry
   def _one_of(choices, chunks, req, formatter):
@@ -158,15 +173,18 @@ def one_of(parsers):
       parsed = parser(chunks,req,formatter)
       return fold(
         lambda err: _one_of(choices[1:], chunks, req, formatter),
-        lambda x:   Right(x),
+        lambda ((seen,rest),_,result): (  
+          Right(((seen,rest),_,result)) if len(rest) == 0 or rest == [""] else \
+          _one_of(choices[1:], chunks, req, formatter)
+        ),
         parsed
       )
-      
+
   return _one_of(parsers)
 
 
 def format(formatter, parser):
-  # type: Any -> Parser -> Parser
+  # (a -> b) -> Parser -> Parser
 
   def _format(chunks,req,fn):
     parsed = parser(chunks, req, formatter)

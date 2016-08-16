@@ -10,7 +10,6 @@ import logging
 logging.basicConfig(level=logging.DEBUG)
 
 import httplib2
-from typing import NamedTuple, Union
 from webtest import TestApp
 from google.appengine.ext.testbed import Testbed
 from google.appengine.api import users
