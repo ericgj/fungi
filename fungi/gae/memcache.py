@@ -7,6 +7,15 @@ from pymonad_extra.Task import Task
 from pymonad_extra.util.task import resolve
 import fungi.util.err as err
 
+class MemcacheAddFailure(Exception):
+  def __init__(self,k,v):
+    self.key = k
+    self.value = v
+
+  def __str__(self):
+    return "Memcache failed to add value at key %s : %s" % (self.key, self.value)
+
+
 def get(key):
   # String -> Task Exception (Maybe a)
 
@@ -30,14 +39,26 @@ def get_multi(prefix, keys):
   return Task(_get_multi)
 
 @curry
-def add(time, key, value):
+def add_with_time(time, key, value):
   def _add(rej,res):
     try:
-      res( memcache.add(key,value,time=time) )
+      r = None
+      if time is None:
+        r = memcache.add(key,value)
+      else:
+        r = memcache.add(key,value,time=time)
+
+      if bool(r):
+        res( value )
+      else:
+        raise MemcacheAddFailure(key,value)
+
     except Exception as e:
       rej( err.wrap(e) )
+  
   return Task(_add)
 
+add = add_with_time(None)
 
 @curry
 def cache_get_with_time(time, key, task):
@@ -57,6 +78,6 @@ def cache_get_with_time(time, key, task):
     )
   )
 
-cache_get = cache_get_with_time(0)
+cache_get = cache_get_with_time(None)
 
 
