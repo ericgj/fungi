@@ -62,6 +62,7 @@ def authorize(params,cache,secret,req,uid):
   # secret param is a site-wide XSRF secret key
   state = either.with_default(uid, xsrf_encode(secret,req.url,uid)) 
   flow = webserver_flow( params, req, {'state': state} )
+  redirect = exc.HTTPFound( location=str(flow.step1_get_authorize_url()) ) 
 
   def _auth_creds(creds):
     def _auth(rej,res):
@@ -70,7 +71,7 @@ def authorize(params,cache,secret,req,uid):
           # if credentials not in cache,
           #   redirect to the flow authorize URL (step 1 of OAuth dance)
           #
-          rej( exc.HTTPFound( location=str(flow.step1_get_authorize_url()) ) )
+          rej(redirect)
         
         else:
           # if credentials are in cache,
@@ -78,15 +79,10 @@ def authorize(params,cache,secret,req,uid):
           #   - http is an httplib2 client authorized with the credentials.
           #   - authurl is the flow authorize URL
           #
-          # Note that oauth2client.client.AccessTokenRefreshError should be 
-          #   caught by downstream tasks where the authorized http is used, and 
-          #   redirect to authurl. This is less than ideal.
-          #
-          res(( 
-            authorized_http(creds.value), 
-            flow.step1_get_authorize_url(),
-            req
-          ))
+          if creds.value.access_token_expired:
+            rej(redirect)
+          else:
+            res( (authorized_http(creds.value), req) )
 
       except Exception as e:
         rej( err.wrap(e) )

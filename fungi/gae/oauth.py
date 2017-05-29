@@ -26,7 +26,12 @@ class Store(object):
         if ent is None:
           res(Nothing)
         else:
-          res(Just(ent))
+          prop = None
+          try:
+            prop = getattr(ent,self._prop)
+            res(Just(prop))
+          except AttributeError:
+            res(Nothing)
 
       except Exception as e:
         rej(err.wrap(e))

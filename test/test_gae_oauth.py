@@ -183,11 +183,10 @@ class TestAppEngineOAuth(unittest.TestCase):
 
     def required_handler(req):
       @reject_errors_task
-      def _handler(http, reauth, req):
+      def _handler(http, req):
         testcase.assertIsNotNone(http)
-        testcase.assertIsNotNone(reauth)
         testcase.was_authorized = True
-        return encode_json({'reauth': reauth})
+        return encode_json({'url': req.url})
 
       return _oauth_required(req) >> fapply(_handler)
 
