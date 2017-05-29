@@ -1,21 +1,52 @@
+from webob import exc
 from wsgi import adapter
-from core import dispatch
 from parse import parse_route
 
-class InitError(Exception):
-  pass
+from util.f import always, curry, debug
+import pymonad_extra.util.either as either
+import pymonad_extra.util.task as task
 
-def mount(parser, router, config=(), init=None):
-  def _raise(e):
-    raise InitError(unicode(e))
 
-  def _set_config(c):
-    hook['config'] = c
+def mount(parser, router):
+  return adapter( dispatch( parse_route(parser), router ) )
 
-  if init is None:
-    return adapter(dispatch(parse_route(parser), router, config))
-  else:
-    hook = { 'config': () }
-    init.fork(_raise, _set_config)
-    return mount(parser, router, config=hook['config'])
+def mount_with_config(parser, router, config):
+  return adapter( dispatch_with_config( parse_route(parser), router, config ) )
+
+def mount_with_init(parser, router, init):
+  return (
+    ( init >> dispatch_with_config( parse_route(parser), router ) )
+      .fmap(adapter)
+  )
+
+def dispatch(parser, router):
+  # (Request -> Either Exception Route) 
+  #  -> (Request -> (Route -> Task Exception Dict)) 
+  #  -> Task Exception Dict
+
+  def _dispatch(req):
+    return either.fold(
+      always( task.reject(exc.HTTPNotFound()) ),
+      router(req),
+      parser(req)
+    )
+
+  return _dispatch
+
+
+@curry
+def dispatch_with_config(parser, router, config):
+  # (Request -> Either Exception Route) 
+  #  -> (config -> Request -> (Route -> Task Exception Dict)) 
+  #  -> config
+  #  -> Task Exception Dict
+
+  def _dispatch(req):
+    return either.fold(
+      always( task.reject(exc.HTTPNotFound()) ),
+      router(config, req),
+      parser(req)
+    )
+
+  return _dispatch
 

@@ -173,7 +173,7 @@ class TestAppEngineOAuth(unittest.TestCase):
       ])
     )
 
-    def route(req,_):
+    def route(req):
       return (
         match(Routes, {
           Required: always(required_handler(req)),
