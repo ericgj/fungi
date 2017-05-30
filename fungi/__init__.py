@@ -14,10 +14,12 @@ def mount_with_config(parser, router, config):
   return adapter( dispatch_with_config( parse_route(parser), router, config ) )
 
 def mount_with_init(parser, router, init):
-  return (
-    ( init >> dispatch_with_config( parse_route(parser), router ) )
-      .fmap(adapter)
-  )
+  def _handler(req):
+    return ( 
+      init.fmap( dispatch_with_config( parse_route(parser), router) )
+        >> (lambda dispatch: dispatch(req))
+    )
+  return adapter(_handler)
 
 def dispatch(parser, router):
   # (Request -> Either Exception Route) 

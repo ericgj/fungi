@@ -164,7 +164,7 @@ def build_success_response(attrs):
   # Dict -> WSGIApp
 
   try:
-    attrs = merge({'status': 200}, attrs)
+    attrs = merge(attrs, {'status': 200})
     attrs_ = dissoc('body',attrs)
     log.debug('build_success_response: (body omitted)\n%s' % with_default({}, pretty_encode(attrs_)), 
               extra={'response': attrs_}) 
