@@ -29,5 +29,5 @@
 
 [oauthlib]: https://oauthlib.readthedocs.io/en/latest/
 [requests-oauthlib]: http://requests-oauthlib.readthedocs.io/en/latest/
-
+[graphql-core]: https://github.com/graphql-python/graphql-core
 
