@@ -50,9 +50,16 @@ class Gzip(Op):
 class SetETag(Op):
   pass
 
+class CacheControl(Op):
+  pass
+
+class CacheExpires(Op):
+  pass
+
 class Batch(Op):
   def __str__(self):
     return ", ".join([ str(op) for op in self.value ])
+
 
 # --- Op constructors
 
@@ -69,6 +76,12 @@ def gzip():
 def set_etag():
   return SetETag(())
 
+def cache_control(opts):
+  return CacheControl(opts)
+
+def cache_expires(secs):
+  return CacheExpires(secs)
+
 def batch_ops(ops):
   return mconcat(ops)
 
@@ -84,6 +97,10 @@ def finalize(op, resp):
     exec_gzip(resp)
   elif isinstance(op, SetETag):
     exec_set_etag(resp)
+  elif isinstance(op, CacheControl):
+    exec_cache_control(op.value, resp)
+  elif isinstance(op, CacheExpires):
+    exec_cache_expires(op.value, resp)
   elif isinstance(op, Batch):
     for o in op.value:
       finalize(o, resp)
@@ -99,4 +116,9 @@ def exec_gzip(resp):
 def exec_set_etag(resp):
   resp.md5_etag()
 
+def exec_cache_control(opts,resp):
+  resp.cache_control = opts
+
+def exec_cache_expires(secs,resp):
+  resp.cache_expires = secs
 

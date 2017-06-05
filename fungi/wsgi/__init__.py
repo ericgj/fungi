@@ -107,6 +107,12 @@ and_gzip = and_finalize(response.gzip())
 
 and_set_etag = and_finalize(response.set_etag())
 
+def and_cache_control(opts):
+  return and_finalize(response.cache_control(opts))
+
+def and_cache_expires(secs):
+  return and_finalize(response.cache_expires(secs))
+
 
 
 # --- WSGI app adapter

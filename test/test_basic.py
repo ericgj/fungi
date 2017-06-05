@@ -8,7 +8,10 @@ from pymonad_extra.util.task import resolve, reject
 from adt import Type, match
 
 import fungi
-from fungi.wsgi import from_text, template_html, encode_json, and_gzip, and_set_etag, and_set_cookie
+from fungi.wsgi import (
+  from_text, template_html, encode_json, 
+  and_gzip, and_set_etag, and_set_cookie, and_cache_control, and_cache_expires
+)
 from fungi.parse import one_of, format, like
 from fungi.cookies import signed_profile, unsigned_profile, cookie
 
@@ -35,10 +38,19 @@ class SuccessNoConfigTests(unittest.TestCase):
   def assert_has_etag(self,resp):
     self.assertIn('Etag', resp.headers, "Expected Etag in %s" % resp.headers)
 
+  def assert_cache_expires(self,resp):
+    self.assertIn('Expires', resp.headers, "Expected Expires in %s" % resp.headers)
+
+  def assert_cache_control(self,resp):
+    self.assertIn('Cache-Control', resp.headers, "Expected Cache-Control in %s" % resp.headers)
+
   def test_success_text(self):
     resp = self.app.get("/text")
     print(resp)
-    self.assert_success("text/plain", resp)   
+    self.assert_success("text/plain", resp)
+    self.assert_has_cookie(resp)
+    self.assert_cache_expires(resp)
+    self.assert_cache_control(resp)
 
   def test_success_html(self):
     resp = self.app.get("/html")
@@ -105,6 +117,8 @@ def test_app_success_no_config():
         .fmap(from_text)
         .fmap( and_set_cookie(sprofile,cookie(u"user",{u"name": u"Eric"})) ) 
         .fmap( and_set_cookie(uprofile,cookie(u"foo",{u"name": u"Foo"})) ) 
+        .fmap( and_cache_expires(60) )
+        .fmap( and_cache_control({"s-maxage": 3600, "proxy-revalidate": None}) )
     )
     
   def _html(req):
