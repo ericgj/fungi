@@ -1,5 +1,8 @@
 from pymonad.Monoid import Monoid, mconcat
 
+from util.f import curry
+import cookies
+
 # --- Note: do not instanciate directly, use constructors below
 
 class Op(Monoid):
@@ -56,8 +59,9 @@ class Batch(Op):
 def no_op():
   return NoOp(())
 
-def set_cookie(cookie):
-  return SetCookie(cookie)
+@curry
+def set_cookie(profile,cookie):
+  return SetCookie((profile,cookie))
 
 def gzip():
   return Gzip(())
@@ -86,8 +90,8 @@ def finalize(op, resp):
   return resp
 
 
-def exec_set_cookie(cookie, resp):
-  resp.set_cookie(cookie)
+def exec_set_cookie((profile,(name,value)), resp):
+  cookies.adapter_for(name,profile).set_cookies(resp, value)
 
 def exec_gzip(resp):
   resp.encode_content(encoding='gzip')

@@ -1,3 +1,4 @@
+from __future__ import print_function 
 import unittest
 import logging
 logging.basicConfig(level=logging.DEBUG)
@@ -9,6 +10,7 @@ from adt import Type, match
 import fungi
 from fungi.wsgi import from_text, template_html, encode_json, and_gzip, and_set_etag, and_set_cookie
 from fungi.parse import one_of, format, like
+from fungi.cookies import signed_profile, unsigned_profile, cookie
 
 def render(tmpl):
   def _render(d):
@@ -24,6 +26,9 @@ class SuccessNoConfigTests(unittest.TestCase):
     self.assertEqual(resp.status_int, 200)
     self.assertEqual(resp.content_type, content_type)
 
+  def assert_has_cookie(self,resp):
+    self.assertIn('Set-Cookie', resp.headers, "Expected Set-Cookie in %s" % resp.headers)
+
   def assert_gzip(self,resp):
     pass  # can't do much here because webtest decodes automatically
 
@@ -32,14 +37,17 @@ class SuccessNoConfigTests(unittest.TestCase):
 
   def test_success_text(self):
     resp = self.app.get("/text")
+    print(resp)
     self.assert_success("text/plain", resp)   
 
   def test_success_html(self):
     resp = self.app.get("/html")
+    print(resp)
     self.assert_success("text/html", resp)
 
   def test_success_json(self):
     resp = self.app.get(u"/json/cats/3")
+    print(resp)
     self.assert_success("application/json", resp)
     self.assert_has_etag(resp)
 
@@ -87,8 +95,17 @@ RouteParser = (
 # --- test apps
 
 def test_app_success_no_config():
+  
+  sprofile = signed_profile(u"secret",u"salt",{u"secure": True})
+  uprofile = unsigned_profile({u"path": "/foo"})
+
   def _text(req):
-    return resolve("Hello World").fmap(from_text) 
+    return (
+      resolve("Hello World")
+        .fmap(from_text)
+        .fmap( and_set_cookie(sprofile,cookie(u"user",{u"name": u"Eric"})) ) 
+        .fmap( and_set_cookie(uprofile,cookie(u"foo",{u"name": u"Foo"})) ) 
+    )
     
   def _html(req):
     return (

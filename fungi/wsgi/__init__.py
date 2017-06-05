@@ -100,8 +100,8 @@ def finalize_after(fn, (a, op)):
 def and_finalize(newop, (a,op)):
   return (a, op + newop)
 
-def and_set_cookie(c):
-  return and_finalize(response.set_cookie(c))
+def and_set_cookie(p,c):
+  return and_finalize(response.set_cookie(p,c))
 
 and_gzip = and_finalize(response.gzip())
 
@@ -115,23 +115,22 @@ def adapter(func):
   # (Request -> Task Exception (Dict, Op)) -> WSGIApp
   
   def _adapter(environ, start_response):
-    
     def _finalize_error(resp):
-      req.response = resp
+      state['response'] = resp
 
     def _finalize_success((resp, op)):
       try:
         response.finalize(op, resp)
+        state['response'] = resp
       except Exception as e:
         log.error(
           u'finalize: failed to execute %s' % (op,) ,
           extra={'error': e}
         )
-        req.response = build_error_response(e)
-      req.response = resp
+        state['response'] = build_error_response(e)
 
     req = Request(environ)
-    req.response = exc.HTTPNotImplemented()
+    state = {"response": exc.HTTPNotImplemented() }
 
     task = func(req).bimap(
       build_error_response,
@@ -139,7 +138,7 @@ def adapter(func):
     )
 
     task.fork(_finalize_error, _finalize_success)
-    return req.response(environ, start_response)
+    return state['response'](environ, start_response)
 
   return _adapter
 
