@@ -2,7 +2,7 @@ from webob.cookies import SignedCookieProfile, CookieProfile
 
 from util.f import curry, always
 import util.err as err
-from util.adt import Type, match
+from adt import Type, match
 
 Cookie = Type('Cookie', [ unicode, always(True) ])  # key, value
 SignedProfile = Type('SignedProfile', [dict, unicode, unicode])  # config, secret, salt

@@ -15,12 +15,12 @@ from google.appengine.ext.testbed import Testbed
 from google.appengine.api import users
 from pymonad.Maybe import Nothing
 from pymonad_extra.util.task import reject, resolve
+from adt import Type, match
 
 from fungi import mount
 from fungi.wsgi import encode_json
 import fungi.oauth as oauth
 from fungi.util.f import always, fapply
-from fungi.util.adt import Type, match
 from fungi.parse import one_of, s, format, method
 from fungi.gae.oauth import CredentialsStore
 from fungi.gae.user import current_or_redirect_to_login
@@ -192,7 +192,7 @@ class TestAppEngineOAuth(unittest.TestCase):
 
     def callback_handler(req):
       @reject_errors
-      def _spy(respdata):
+      def _spy((respdata,op)):
         testcase.assertResponseRedirect(respdata)
         testcase.assertResponseLocation(encode_url(Required(),req), respdata)
         key = oauth_params.token_response_param
@@ -201,7 +201,7 @@ class TestAppEngineOAuth(unittest.TestCase):
             key, json.dumps(Http2Fake.content, separators=(',',':')), respdata
           )
         testcase.called_callback = True
-        return respdata
+        return (respdata,op)
       return _oauth_callback(req) >> _spy
 
     def _oauth_required(req):

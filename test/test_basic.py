@@ -4,11 +4,11 @@ logging.basicConfig(level=logging.DEBUG)
 
 from webtest import TestApp
 from pymonad_extra.util.task import resolve, reject
+from adt import Type, match
 
 import fungi
 from fungi.wsgi import from_text, template_html, encode_json, and_gzip, and_set_etag, and_set_cookie
 from fungi.parse import one_of, format, like
-from fungi.util.adt import Type, match
 
 def render(tmpl):
   def _render(d):

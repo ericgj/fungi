@@ -2,11 +2,11 @@ import unittest
 import logging
 from itertools import permutations
 
-from fungi.util.f import identity
-
-import fungi.parse as p
-from fungi.util.adt import Type
+from adt import Type
 import pymonad_extra.util.either as either
+
+from fungi.util.f import identity
+import fungi.parse as p
 
 logging.basicConfig(level=logging.DEBUG)
 log = logging.getLogger(__name__)
