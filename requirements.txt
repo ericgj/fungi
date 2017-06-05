@@ -2,6 +2,6 @@ webob >=1.6, <1.7
 oauth2client >=2.2, <2.3
 httplib2 >=0.9, <0.10
 webtest >=2.0, <2.1
-adt.py >=0.0.8, <0.1
+adt.py >=0.0.9, <0.1
 
 -r dependency-links.txt
