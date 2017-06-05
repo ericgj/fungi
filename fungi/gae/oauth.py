@@ -3,10 +3,9 @@ from google.appengine.ext import ndb
 from oauth2client.client import Credentials
 
 from pymonad.Maybe import Nothing, Just
-from pymonad_extra.Task import Task
 import pymonad_extra.util.task as task
 
-import fungi.util.err as err
+from fungi.util.err import reject_errors
 
 log = logging.getLogger(__name__)
 
@@ -20,54 +19,41 @@ class Store(object):
     self._prop = prop
 
   def get(self,uid):
-    def _get(rej,res):
-      try:
-        ent = self._model.get_by_id(uid)
-        if ent is None:
-          res(Nothing)
-        else:
-          prop = None
-          try:
-            prop = getattr(ent,self._prop)
-            res(Just(prop))
-          except AttributeError:
-            res(Nothing)
-
-      except Exception as e:
-        rej(err.wrap(e))
-    
-    return Task(_get)
+    @reject_errors
+    def _get():
+      ent = self._model.get_by_id(uid)
+      if ent is None:
+        return Nothing
+      else:
+        prop = None
+        try:
+          prop = getattr(ent,self._prop)
+          return Just(prop)
+        except AttributeError:
+          return Nothing
+    return _get()
 
   def put(self,uid,val):
-    def _put(rej,res):
-      try:
-        ent = self._model.get_or_insert(uid)
-        setattr(ent, self._prop, val)
-        res(ent.put())
-      except Exception as e:
-        rej(err.wrap(e))
-    
-    return Task(_put)
+    @reject_errors
+    def _put():
+      ent = self._model.get_or_insert(uid)
+      setattr(ent, self._prop, val)
+      return ent.put()
+    return _put()
 
   def delete(self,uid):
-    def _delete(rej,res):
-      try:
-        key = ndb.Key(self._model, uid)
-        res( key.delete() )
-      except Exception as e:
-        rej(err.wrap(e))
-
-    return Task(_delete)
-
+    @reject_errors
+    def _delete():
+      key = ndb.Key(self._model, uid)
+      return key.delete()
+    return _delete()
 
   def delete_all(self):
     def _delete(key):
-      def _delete_task(rej,res):
-        try:
-          res( key.delete() )
-        except Exception as e:
-          rej(err.wrap(e))
-      return Task(_delete_task)
+      @reject_errors
+      def _delete_task():
+        return key.delete()
+      return _delete_task()
 
     return task.sequence([
       _delete(key) for key in self._model.query().iter(keys_only=True)

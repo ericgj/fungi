@@ -2,11 +2,10 @@ import logging
 from json import JSONEncoder
 from webob import Request, Response, exc
 
-from pymonad_extra.Task import Task
 from pymonad_extra.util.either import to_task, with_default
 from util.f import curry, merge, assoc, dissoc, identity
 from util.json_ import pretty_encode, encode_with
-import util.err
+from util.err import reject_errors
 
 import wsgi.response as response
 
@@ -199,15 +198,7 @@ def build_success_response(attrs):
 # Note: as standalone function, Either would make more sense. But easier
 # to deal with as a Task here.
 
+@reject_errors
 def render(fn,data):
-  def _render(rej,res): 
-    try:
-      res( fn(data) )
-
-    except Exception as e:
-      rej(util.err.wrap(e))
-
-  return Task(_render)
-
-
+  return fn(data)
 

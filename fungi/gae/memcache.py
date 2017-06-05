@@ -3,9 +3,9 @@ from google.appengine.api import memcache
 from fungi.util.f import curry, always
 from pymonad.Maybe import Nothing, Just
 from pymonad_extra.util.maybe import with_default
-from pymonad_extra.Task import Task
 from pymonad_extra.util.task import resolve
-import fungi.util.err as err
+
+from fungi.util.err import reject_errors
 
 class MemcacheAddFailure(Exception):
   def __init__(self,k,v):
@@ -15,48 +15,34 @@ class MemcacheAddFailure(Exception):
   def __str__(self):
     return "Memcache failed to add value at key %s : %s" % (self.key, self.value)
 
-
+@reject_errors
 def get(key):
   # String -> Task Exception (Maybe a)
+  r = memcache.get(key)
+  return Nothing if r is None else Just(r)
 
-  def _get(rej,res):
-    try:
-      r = memcache.get(key)
-      res( Nothing if r is None else Just(r) )
-    except Exception as e:
-      rej( err.wrap(e) )
-  return Task(_get)
-
+@reject_errors
 def get_multi(prefix, keys):
   # String -> List String -> Task Exception (List (Maybe a))
-
-  def _get_multi(rej,res):
-    try:
-      r = memcache.get_multi(keys, key_prefix=prefix)
-      res( [ Nothing if r.get(k) is None else Just(r.get(k)) for k in keys ] )
-    except Exception as e:
-      rej( err.wrap(e) )
-  return Task(_get_multi)
+  r = memcache.get_multi(keys, key_prefix=prefix)
+  return [ Nothing if r.get(k) is None else Just(r.get(k)) for k in keys ]
 
 @curry
 def add_with_time(time, key, value):
-  def _add(rej,res):
-    try:
-      r = None
-      if time is None:
-        r = memcache.add(key,value)
-      else:
-        r = memcache.add(key,value,time=time)
+  @reject_errors
+  def _add():
+    r = None
+    if time is None:
+      r = memcache.add(key,value)
+    else:
+      r = memcache.add(key,value,time=time)
 
-      if bool(r):
-        res( value )
-      else:
-        raise MemcacheAddFailure(key,value)
+    if bool(r):
+      return value
+    else:
+      raise MemcacheAddFailure(key,value)
 
-    except Exception as e:
-      rej( err.wrap(e) )
-  
-  return Task(_add)
+  return _add()
 
 add = add_with_time(None)
 

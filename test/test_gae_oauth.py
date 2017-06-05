@@ -24,26 +24,7 @@ from fungi.util.f import always, fapply
 from fungi.parse import one_of, s, format, method
 from fungi.gae.oauth import CredentialsStore
 from fungi.gae.user import current_or_redirect_to_login
-import fungi.util.err as err
-
-# decorators, maybe move to pymonad_extra.util.task ? 
-def reject_errors(fn):
-  # (*a -> b) -> Task Exception b
-  def _reject(*a,**kw):
-    try:
-      return resolve( fn(*a,**kw) )
-    except Exception as e:
-      return reject( err.wrap(e) )
-  return _reject
-      
-def reject_errors_task(fn):
-  # (*a -> Task Exception c) -> Task Exception c
-  def _reject(*a,**kw):
-    try:
-      return fn(*a,**kw)
-    except Exception as e:
-      return reject( err.wrap(e) )
-  return _reject
+from fungi.util.err import reject_errors, reject_errors_task
 
 #-------------------------------------------------------------------------------
 # Infrastructure fakery, a necessary evil
