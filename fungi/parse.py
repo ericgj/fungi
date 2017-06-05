@@ -78,12 +78,12 @@ def segment(text):
   def _segment((seen,rest),req,result):
 
     if len(rest) == 0:
-      return Left("Got to the end of the URL but wanted '%s'" % text)
+      return Left(u"Got to the end of the URL but wanted '%s'" % text)
     else:
       if rest[0] == text:
         return Right( ((seen + [rest[0]], rest[1:]), req, result) )
       else:
-        return Left( "Wanted '%s' but got '%s'" % (text, "/".join(rest)) )
+        return Left( u"Wanted '%s' but got '%s'" % (text, u"/".join(rest)) )
 
   return _segment
 
@@ -95,11 +95,11 @@ def custom(label,fn):
 
   def _custom((seen,rest), req, result):
     if len(rest) == 0:
-      return Left("Got to the end of the URL but wanted %s" % label)
+      return Left(u"Got to the end of the URL but wanted %s" % label)
     else:
       chunk = rest[0]
       return fold(
-        lambda msg: Left("Parsing '%s' failed: %s" % (chunk, msg)) ,
+        lambda msg: Left(u"Parsing '%s' failed: %s" % (chunk, msg)) ,
         lambda x:   Right( ((seen + [chunk], rest[1:]), req, result(x)) ),
         fn(chunk)
       )
@@ -107,7 +107,7 @@ def custom(label,fn):
   return _custom
 
 # ParseState -> Either String ParseState
-string = custom("STRING", Right)
+string = custom(u"STRING", Right)
 
 def to_int(x):
   try: 
@@ -116,22 +116,22 @@ def to_int(x):
     return Left(unicode(e))
 
 # ParseState -> Either String ParseState
-number = custom("NUMBER", to_int)
+number = custom(u"NUMBER", to_int)
 
 
 def like_path(tmpl):
   def _compile(part):
-    if part.startswith("%"):
+    if part.startswith(u"%"):
       return {
-        'd': number,
-        's': string
+        u'd': number,
+        u's': string
       }[part[1:]]
     else:
       return s(part)
 
   try:
-    path = tmpl[1:] if tmpl.startswith("/") else tmpl
-    parts = path.split("/")
+    path = tmpl[1:] if tmpl.startswith(u"/") else tmpl
+    parts = path.split(u"/")
     parsers = [
       _compile(part) for part in parts
     ]
@@ -139,7 +139,7 @@ def like_path(tmpl):
   # ok, this is lazy but good enough for now
   except Exception as e:
     return always( 
-      Left("Unable to parse template: %s" % str(e))
+      Left(u"Unable to parse template: %s" % str(e))
     )
 
   return all_of(parsers)
@@ -155,22 +155,22 @@ def custom_req(label,fn):
     if fn(req):
       return Right(((seen,rest), req, result))
     else:
-      return Left("Request %s does not match" % label)
+      return Left(u"Request %s does not match" % label)
   return _custom_req
 
 def method(meth):
-  return custom_req("METHOD", lambda req: req.method == meth)
+  return custom_req(u"METHOD", lambda req: req.method == meth)
 
 def methods(meths):
-  return custom_req("METHOD", lambda req: req.method in meths)  
+  return custom_req(u"METHOD", lambda req: req.method in meths)  
 
 
 def like(tmpl):
   try:
-    meth, path = tmpl.split(" ")
+    meth, path = tmpl.split(u" ")
   except Exception as e:
     return always( 
-      Left("Unable to parse template: %s" % str(e))
+      Left(u"Unable to parse template: %s" % unicode(e))
     )
 
   return all_of( [ method(meth), like_path(path) ] )
