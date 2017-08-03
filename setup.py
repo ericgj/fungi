@@ -8,7 +8,7 @@ setup(
   author='Eric Gjertsen',
   author_email='ericgj72@gmail.com',
   license='MIT',
-  packages=['fungi', 'fungi/gae', 'fungi/util' ],
+  packages=['fungi', 'fungi/gae', 'fungi/util', 'fungi/wsgi' ],
   dependency_links=[
     'https://bitbucket.org/ericgj/pymonad/get/master.zip#egg=pymonad',
     'https://bitbucket.org/ericgj/pymonad-extra/get/master.zip#egg=pymonad_extra'
