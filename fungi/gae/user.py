@@ -5,8 +5,8 @@ from pymonad_extra.util.maybe import with_default
 from pymonad.Either import Left, Right
 from pymonad_extra.util.either import fold
 from pymonad_extra.util.task import reject, resolve
-from fungi.util.err import left_errors
-from fungi.wsgi import redirect_response
+from ..util.err import left_errors
+from ..wsgi import redirect_response
 
 def current():
   # () -> Maybe User

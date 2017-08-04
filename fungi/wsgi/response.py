@@ -1,7 +1,7 @@
 from pymonad.Monoid import Monoid, mconcat
 
-from util.f import curry
-import cookies
+from ..util.f import curry
+from .. import cookies
 
 # --- Note: do not instanciate directly, use constructors below
 

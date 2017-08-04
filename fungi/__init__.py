@@ -1,8 +1,8 @@
 from webob import exc
-from wsgi import adapter
-from parse import parse_route
+from .wsgi import adapter
+from .parse import parse_route
 
-from util.f import always, curry, debug
+from .util.f import always, curry, debug
 import pymonad_extra.util.either as either
 import pymonad_extra.util.task as task
 

@@ -3,11 +3,11 @@ from json import JSONEncoder
 from webob import Request, Response, exc
 
 from pymonad_extra.util.either import to_task, with_default
-from util.f import curry, merge, assoc, dissoc, identity
-from util.json_ import pretty_encode, encode_with
-from util.err import reject_errors
+from ..util.f import curry, merge, assoc, dissoc, identity
+from ..util.json_ import pretty_encode, encode_with
+from ..util.err import reject_errors
 
-import wsgi.response as response
+from . import response
 
 log = logging.getLogger(__name__)
 def debug_log(msg,x):

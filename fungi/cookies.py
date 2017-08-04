@@ -1,6 +1,6 @@
 from webob.cookies import SignedCookieProfile, CookieProfile
 
-from util.f import always
+from .util.f import always
 from adt import Type, match
 
 Cookie = Type('Cookie', [ unicode, always(True) ])  # key, value

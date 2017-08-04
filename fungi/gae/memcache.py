@@ -1,11 +1,11 @@
 from google.appengine.api import memcache
 
-from fungi.util.f import curry, always
+from ..util.f import curry, always
 from pymonad.Maybe import Nothing, Just
 from pymonad_extra.util.maybe import with_default
 from pymonad_extra.util.task import resolve
 
-from fungi.util.err import reject_errors
+from ..util.err import reject_errors
 
 class MemcacheAddFailure(Exception):
   def __init__(self,k,v):

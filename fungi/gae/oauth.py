@@ -5,7 +5,7 @@ from oauth2client.client import Credentials
 from pymonad.Maybe import Nothing, Just
 import pymonad_extra.util.task as task
 
-from fungi.util.err import reject_errors
+from ..util.err import reject_errors
 
 log = logging.getLogger(__name__)
 

@@ -14,10 +14,10 @@ from pymonad_extra.Task import Task
 import pymonad_extra.util.maybe as maybe
 import pymonad_extra.util.either as either
 
-from util.f import curry, always 
-from wsgi import redirect_to
-import util.err as err
-import util.json_ as json_
+from .util.f import curry, always 
+from .wsgi import redirect_to
+from .util import err as err
+from .util import json_ as json_
 
 OAuthParams = namedtuple('OAuthParams', [
   'client_id',

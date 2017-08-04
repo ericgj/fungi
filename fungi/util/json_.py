@@ -1,7 +1,7 @@
 import json
 from pymonad.Either import Left, Right
-from f import curry
-import err
+from .f import curry
+from . import err
 
 @curry
 def encode_with_options(opts,encoder,data):

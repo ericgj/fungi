@@ -40,7 +40,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 import logging
 from pymonad.Either import Left, Right
 from pymonad_extra.util.either import fold
-from util.f import curry, fapply, identity, always
+from .util.f import curry, fapply, identity, always
 
 log = logging.getLogger(__name__)
 def debug_log(msg, x):
