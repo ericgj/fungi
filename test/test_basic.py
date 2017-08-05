@@ -10,7 +10,8 @@ from adt import Type, match
 import fungi
 from fungi.wsgi import (
   from_text, template_html, encode_json, 
-  and_gzip, and_set_etag, and_set_cookie, and_cache_control, and_cache_expires
+  and_gzip, and_set_etag, and_set_cookie, and_cache_control, and_cache_expires,
+  and_add_header, and_add_headers
 )
 from fungi.parse import one_of, format, like
 from fungi.cookies import signed_profile, unsigned_profile, cookie
@@ -38,6 +39,10 @@ class SuccessNoConfigTests(unittest.TestCase):
   def assert_has_etag(self,resp):
     self.assertIn('Etag', resp.headers, "Expected Etag in %s" % resp.headers)
 
+  def assert_has_header(self,expkey,expval,resp):
+    self.assertIn(expkey, resp.headers, "Expected header %s in %s" % (expkey, resp.headers) )
+    self.assertEqual(resp.headers.get(expkey,None), expval)
+
   def assert_cache_expires(self,resp):
     self.assertIn('Expires', resp.headers, "Expected Expires in %s" % resp.headers)
 
@@ -62,6 +67,9 @@ class SuccessNoConfigTests(unittest.TestCase):
     print(resp)
     self.assert_success("application/json", resp)
     self.assert_has_etag(resp)
+    self.assert_has_header("X-FOO","FOO",resp)
+    self.assert_has_header("X-BAR","BAR",resp)
+    self.assert_has_header("X-QUUX","QUUX",resp)
 
 
 class FailNoConfigTests(unittest.TestCase):
@@ -133,9 +141,13 @@ def test_app_success_no_config():
 
   def _json(s,i,req):
     return (
-      resolve({"a": "hello", "b": "world", s: i})
-        >> encode_json
-    ).fmap( and_set_etag ).fmap( and_gzip )
+      ( resolve({"a": "hello", "b": "world", s: i})
+          >> encode_json
+      ).fmap( and_set_etag )
+       .fmap( and_gzip )
+       .fmap( and_add_header("X-FOO","FOO") )
+       .fmap( and_add_headers([("X-BAR","BAR"),("X-QUUX","QUUX")]) )
+    )
 
   return test_app_no_config(_text, _html, _json)
 

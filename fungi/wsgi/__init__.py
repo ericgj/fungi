@@ -63,20 +63,13 @@ def template(spec,func,data):
 template_html = template(('text/html','utf-8'))
 template_text = template(('text/plain','utf-8'))
 
-@curry
-def add_headers(hdrlist,attrs):
-  # List (String, String) -> Dict -> (Dict, Op)
-
-  return (
-    ( assoc('headerlist', attrs.get('headerlist',[]) + hdrlist, attrs),
-      response.no_op()
-    )
-  )
-    
 # Note: use this as success case
 def redirect_to(url):
   # String -> (Dict, Op)
-  return add_headers([('Location',url)], {'status': 303}) 
+  return (
+    {'status': 303}, 
+    response.add_header('Location',url) 
+  )
 
 # Note: use this as failure case
 def redirect_response(url):
@@ -99,6 +92,12 @@ def finalize_after(fn, (a, op)):
 @curry
 def and_finalize(newop, (a,op)):
   return (a, op + newop)
+
+def and_add_header(k,v):
+  return and_finalize(response.add_header(k,v))
+
+def and_add_headers(pairs):
+  return and_finalize(response.add_headers(pairs))
 
 def and_set_cookie(p,c):
   return and_finalize(response.set_cookie(p,c))

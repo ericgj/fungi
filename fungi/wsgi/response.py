@@ -9,7 +9,7 @@ class Op(Monoid):
   
   @staticmethod
   def mzero():
-    return NoOp()
+    return NoOp(())
 
   def __str__(self):
     return self.__class__.__name__
@@ -41,6 +41,9 @@ class Op(Monoid):
 class NoOp(Op):
   pass
 
+class AddHeader(Op):
+  pass
+
 class SetCookie(Op):
   pass
 
@@ -65,6 +68,13 @@ class Batch(Op):
 
 def no_op():
   return NoOp(())
+
+
+def add_headers(pairs):
+  return batch_ops([ add_header(k,v) for (k,v) in pairs ])
+
+def add_header(key,value):
+  return AddHeader((key,value))
 
 @curry
 def set_cookie(profile,cookie):
@@ -91,6 +101,8 @@ def batch_ops(ops):
 def finalize(op, resp):
   if isinstance(op, NoOp):
     pass
+  elif isinstance(op, AddHeader):
+    exec_add_header(op.value, resp)
   elif isinstance(op, SetCookie):
     exec_set_cookie(op.value, resp)
   elif isinstance(op, Gzip):
@@ -106,6 +118,9 @@ def finalize(op, resp):
       finalize(o, resp)
   return resp
 
+
+def exec_add_header((key,value), resp):
+  resp.headers.add(key,value)
 
 def exec_set_cookie((profile,(name,value)), resp):
   cookies.adapter_for(name,profile).set_cookies(resp, value)
