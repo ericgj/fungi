@@ -1,11 +1,13 @@
 import logging
 from json import JSONEncoder
+from io import BytesIO
 from webob import Request, Response, exc
 
 from pymonad_extra.util.either import to_task, with_default
 from ..util.f import curry, merge, assoc, dissoc, identity
 from ..util.json_ import pretty_encode, encode_with
 from ..util.err import reject_errors
+from ..util import csv_
 
 from . import response
 
@@ -16,6 +18,15 @@ def debug_log(msg,x):
 
 
 # --- Response adapters
+
+def empty_response((ctype,charset)):
+  return (
+    { 'status': 200,
+      'content_type': ctype,
+      'charset': charset
+    },
+    response.no_op()
+  )
 
 @curry
 def from_string((ctype,charset),s):
@@ -48,6 +59,52 @@ def encode_json_with(encoder,data):
   )
 
 encode_json = encode_json_with(JSONEncoder)
+
+@curry
+def write_stream((ctype,charset), write):
+  # (String, String) -> (Stream -> Task Exception x) -> (Dict, Op)
+  resp = empty_response((ctype,charset))
+  return and_write_stream(write)(resp)
+
+@curry
+def write_csv_dicts(fields,data):
+  return (
+    write_stream(('text/csv','utf8'), csv_.write_dicts('utf8',fields,data))
+  )
+
+@curry
+def write_csv_tuples(fields,data):
+  return (
+    write_stream(('text/csv','utf8'), csv_.write_tuples('utf8',fields,data))
+  )
+
+@curry
+def write_tsv_dicts(fields,data):
+  return (
+    write_stream(('text/tab-separated-values','utf8'), csv_.write_tsv_dicts('utf8',fields,data))
+  )
+
+@curry
+def write_tsv_tuples(fields,data):
+  return (
+    write_stream(('text/tab-separated-values','utf8'), csv_.write_tsv_tuples('utf8',fields,data))
+  )
+
+@curry
+def write_dsv_dicts(mimetype,opts,fields,data):
+  return (
+    write_stream((mimetype,'utf8'), 
+      csv_.write_dicts_with_options(opts,'utf8',fields,data)
+    )
+  )
+
+@curry
+def write_dsv_tuples(mimetype,opts,fields,data):
+  return (
+    write_stream((mimetype,'utf8'), 
+      csv_.write_tuples_with_options(opts,'utf8',fields,data)
+    )
+  )
 
 
 @curry
@@ -112,6 +169,8 @@ def and_cache_control(opts):
 def and_cache_expires(secs):
   return and_finalize(response.cache_expires(secs))
 
+def and_write_stream(write):
+  return and_finalize(response.write_stream(write))
 
 
 # --- WSGI app adapter

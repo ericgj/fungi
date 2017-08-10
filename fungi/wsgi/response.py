@@ -1,4 +1,5 @@
 from pymonad.Monoid import Monoid, mconcat
+import pymonad_extra.util.task as task
 
 from ..util.f import curry
 from .. import cookies
@@ -59,6 +60,9 @@ class CacheControl(Op):
 class CacheExpires(Op):
   pass
 
+class WriteStream(Op):
+  pass
+
 class Batch(Op):
   def __str__(self):
     return ", ".join([ str(op) for op in self.value ])
@@ -92,6 +96,10 @@ def cache_control(opts):
 def cache_expires(secs):
   return CacheExpires(secs)
 
+def write_stream(write):
+  # (Stream -> Task Exception x) -> WriteStream
+  return WriteStream(write)
+
 def batch_ops(ops):
   return mconcat(ops)
 
@@ -113,6 +121,8 @@ def finalize(op, resp):
     exec_cache_control(op.value, resp)
   elif isinstance(op, CacheExpires):
     exec_cache_expires(op.value, resp)
+  elif isinstance(op, WriteStream):
+    exec_write_stream(op.value, resp)
   elif isinstance(op, Batch):
     for o in op.value:
       finalize(o, resp)
@@ -136,4 +146,14 @@ def exec_cache_control(opts,resp):
 
 def exec_cache_expires(secs,resp):
   resp.cache_expires = secs
+
+def exec_write_stream(write,resp):
+  def _rethrow(e):
+    raise e
+
+  def _noop(x):
+    pass
+
+  t = write(resp.body_file)
+  t.fork(_rethrow, _noop)
 

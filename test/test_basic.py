@@ -10,6 +10,8 @@ from adt import Type, match
 import fungi
 from fungi.wsgi import (
   from_text, template_html, encode_json, 
+  write_csv_tuples, write_csv_dicts, write_tsv_tuples, write_tsv_dicts,
+  write_dsv_tuples, write_dsv_dicts,
   and_gzip, and_set_etag, and_set_cookie, and_cache_control, and_cache_expires,
   and_add_header, and_add_headers
 )
@@ -71,6 +73,17 @@ class SuccessNoConfigTests(unittest.TestCase):
     self.assert_has_header("X-BAR","BAR",resp)
     self.assert_has_header("X-QUUX","QUUX",resp)
 
+  def test_success_csv(self):
+    resp = self.app.get(u'/csv')
+    print(resp)
+    self.assert_success("text/csv", resp)
+
+  def test_success_dsv(self):
+    resp = self.app.get(u'/dsv')
+    print(resp)
+    self.assert_success("text/x-pipe-delimited", resp)
+
+
 
 class FailNoConfigTests(unittest.TestCase):
    
@@ -92,6 +105,13 @@ class FailNoConfigTests(unittest.TestCase):
     resp = self.app.get("/json/thing/143", status="*")
     self.assert_fail(500,resp)
 
+  def test_fail_csv(self):
+    resp = self.app.get("/csv", status="*")
+    self.assert_fail(500,resp)
+
+  def test_fail_dsv(self):
+    resp = self.app.get("/dsv", status="*")
+    self.assert_fail(500,resp)
 
 
 
@@ -100,14 +120,18 @@ class FailNoConfigTests(unittest.TestCase):
 Text = Type("Text", [])
 Html = Type("Html", [])
 Json = Type("Json", [str, int])  # not sure why str and not unicode; webtest?
+Csv = Type("Csv", [])
+Dsv = Type("Dsv", [])
 
-Routes = [Text, Html, Json]
+Routes = [Text, Html, Json, Csv, Dsv]
 
 RouteParser = (
   one_of([
     format( Text, like(u"GET /text") ),
     format( Html, like(u"GET /html") ),
-    format( Json, like(u"GET /json/%s/%d") )
+    format( Json, like(u"GET /json/%s/%d") ),
+    format( Csv, like(u"GET /csv") ), 
+    format( Dsv, like(u"GET /dsv") )
   ])
 )
 
@@ -149,7 +173,25 @@ def test_app_success_no_config():
        .fmap( and_add_headers([("X-BAR","BAR"),("X-QUUX","QUUX")]) )
     )
 
-  return test_app_no_config(_text, _html, _json)
+  def _csv(req):
+    return (
+      resolve([{"a": "1", "b": "2"}, {"a": "1,1", "b": "2,2"}, {"a": "1,1\n1", "b": "2,2\n2"}])
+        .fmap( write_csv_dicts(["a","b"]) )
+    )
+
+  def _dsv(req):
+    return (
+      resolve([{"a": "1", "b": "2"}, {"a": "1,1", "b": "2,2"}, {"a": "1,1\n1", "b": "2,2\n2"}])
+        .fmap( 
+          write_dsv_dicts(
+            'text/x-pipe-delimited', 
+            {'dialect': 'excel-tab', 'delimiter': '|'},
+            ["a","b"]
+          ) 
+        )
+    )
+
+  return test_app_no_config(_text, _html, _json, _csv, _dsv)
 
 
 def test_app_fail_no_config():
@@ -177,10 +219,30 @@ def test_app_fail_no_config():
         >> encode_json
     )
 
-  return test_app_no_config(_text, _html, _json)
+  def _csv(req):
+    return (
+      ( resolve([{"a": 1, "b": 2}, {"a": 11, "b": 22}, {"a": 111, "b": 222}])
+          >> reject( AssertionError("Boom!") ) ) 
+          .fmap( write_csv_tuples(["a","b"]) )
+    )
+
+  def _dsv(req):
+    return (
+      ( resolve([{"a": "1", "b": "2"}, {"a": "1,1", "b": "2,2"}, {"a": "1,1\n1", "b": "2,2\n2"}])
+          >> reject( AssertionError("Boom |") ) ) 
+        .fmap( 
+          write_dsv_dicts(
+            'text/x-pipe-delimited', 
+            {'dialect': 'excel-tab', 'delimiter': '|'},
+            ["a","b"]
+          ) 
+        )
+    )
+
+  return test_app_no_config(_text, _html, _json, _csv, _dsv)
 
 
-def test_app_no_config( text, html, json ):
+def test_app_no_config( text, html, json, csv, dsv ):
   return (
     fungi.mount( 
       RouteParser,
@@ -188,7 +250,9 @@ def test_app_no_config( text, html, json ):
         match( Routes, {
           Text: (lambda : text(req) ),
           Html: (lambda : html(req) ),
-          Json: (lambda s, i: json(s,i,req) )
+          Json: (lambda s, i: json(s,i,req) ),
+          Csv: (lambda : csv(req) ),
+          Dsv: (lambda : dsv(req) )
         })
       )
     )

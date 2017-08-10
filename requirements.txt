@@ -3,5 +3,6 @@ oauth2client >=2.2, <2.3
 httplib2 >=0.9, <0.10
 webtest >=2.0, <2.1
 adt.py >=0.0.9, <0.1
+unicodecsv >=0.14, <0.15
 
 -r dependency-links.txt
