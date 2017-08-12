@@ -13,7 +13,16 @@ class MemcacheAddFailure(Exception):
     self.value = v
 
   def __str__(self):
-    return "Memcache failed to add value at key %s : %s" % (self.key, self.value)
+    return "Memcache failed to add value at key %s" % (self.key,)
+
+class MemcacheSetFailure(Exception):
+  def __init__(self,k,v):
+    self.key = k
+    self.value = v
+
+  def __str__(self):
+    return "Memcache failed to set value at key %s" % (self.key,)
+
 
 @reject_errors
 def get(key):
@@ -47,17 +56,37 @@ def add_with_time(time, key, value):
 add = add_with_time(None)
 
 @curry
+def set_with_time(time, key, value):
+  @reject_errors
+  def _set():
+    r = None
+    if time is None:
+      r = memcache.set(key,value)
+    else:
+      r = memcache.set(key,value,time=time)
+
+    if bool(r):
+      return value
+    else:
+      raise MemcacheSetFailure(key,value)
+
+  return _set()
+
+set = set_with_time(None)
+
+
+@curry
 def cache_get_with_time(time, key, task):
   # Int -> String -> Task a b -> Task a b
 
-  def _and_add(r):
-    return add(time,key,r).fmap(always(r))
+  def _and_set(r):
+    return set(time,key,r).fmap(always(r))
 
   return (
     get(key) >> (
       lambda r: (
         with_default(
-          task >> _and_add ,
+          task >> _and_set ,
           r.fmap(resolve)
         )
       )
